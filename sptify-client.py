@@ -1,28 +1,43 @@
 import spotipy
 from spotipy.oauth2 import SpotifyClientCredentials
 import datetime
+import os
+from dotenv import load_dotenv
 
-# Tus credenciales de Spotify
-CLIENT_ID = ''
-CLIENT_SECRET = ''
+# Cargar las variables de entorno desde el archivo .env
+load_dotenv()
 
-# Autenticación con Spotify
-sp = spotipy.Spotify(auth_manager=SpotifyClientCredentials(client_id=CLIENT_ID, client_secret=CLIENT_SECRET))
+# Obtener las credenciales desde las variables de entorno
+client_id = os.getenv('SPOTIPY_CLIENT_ID')
+client_secret = os.getenv('SPOTIPY_CLIENT_SECRET')
 
-# Función para obtener las canciones más escuchadas en una categoría específica (e.g., "rock")
-def get_top_tracks_for_genre(sp, genre, country='US', limit=20):
-    results = sp.search(q=f'genre:{genre}', type='track', limit=limit, market=country)
-    tracks = results['tracks']['items']
-    return tracks
+# Autenticación
+client_credentials_manager = SpotifyClientCredentials(client_id=client_id, client_secret=client_secret)
+sp = spotipy.Spotify(client_credentials_manager=client_credentials_manager)
 
-# Obtener las canciones de rock más escuchadas
-top_rock_tracks = get_top_tracks_for_genre(sp, 'rock')
+# Obtener la fecha de hace un mes
+today = datetime.date.today()
+first_day_of_last_month = today.replace(day=1) - datetime.timedelta(days=1)
+start_date = first_day_of_last_month.replace(day=1).isoformat()
 
-# Imprimir los resultados
-for idx, track in enumerate(top_rock_tracks):
-    print(f"{idx+1}. {track['name']} by {', '.join([artist['name'] for artist in track['artists']])}")
+# Obtener las playlists de rock más populares
+playlists = sp.search(q='genre:rock', type='playlist', limit=10)
 
-# Opcional: guardar los resultados en un archivo
-with open('top_rock_tracks.txt', 'w') as f:
-    for idx, track in enumerate(top_rock_tracks):
-        f.write(f"{idx+1}. {track['name']} by {', '.join([artist['name'] for artist in track['artists']])}\n")
+# Obtener las canciones de las playlists
+tracks = []
+for playlist in playlists['playlists']['items']:
+    playlist_tracks = sp.playlist_tracks(playlist['id'])
+    for item in playlist_tracks['items']:
+        track = item['track']
+        tracks.append({
+            'name': track['name'],
+            'artist': track['artists'][0]['name'],
+            'popularity': track['popularity']
+        })
+
+# Ordenar las canciones por popularidad
+top_tracks = sorted(tracks, key=lambda x: x['popularity'], reverse=True)
+
+# Imprimir las canciones de rock más escuchadas del mes pasado
+for track in top_tracks:
+    print(f"{track['name']} - {track['artist']} (Popularity: {track['popularity']})")
