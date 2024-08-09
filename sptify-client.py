@@ -1,43 +1,69 @@
-import os
 import spotipy
 from spotipy.oauth2 import SpotifyClientCredentials
-from dotenv import load_dotenv
 import datetime
+import os
+from dotenv import load_dotenv
 
-# Cargar las variables de entorno desde el archivo .env
-load_dotenv()
+# Clase que representa una canción
+class Cancion:
+    def __init__(self, nombre, artista, popularidad):
+        self.nombre = nombre
+        self.artista = artista
+        self.popularidad = popularidad
 
-# Obtener las credenciales de las variables de entorno
-client_id = os.getenv('SPOTIPY_CLIENT_ID')
-client_secret = os.getenv('SPOTIPY_CLIENT_SECRET')
+    def __str__(self):
+        return f"{self.nombre} - {self.artista} (Popularity: {self.popularidad})"
 
-# Autenticación
-client_credentials_manager = SpotifyClientCredentials(client_id=client_id, client_secret=client_secret)
-sp = spotipy.Spotify(client_credentials_manager=client_credentials_manager)
+# Clase para gestionar la autenticación y la obtención de canciones de Spotify
+class SpotifyRockTracks:
+    def __init__(self):
+        load_dotenv()  # Cargar las variables de entorno desde el archivo .env
+        self.client_id = os.getenv('SPOTIPY_CLIENT_ID')
+        self.client_secret = os.getenv('SPOTIPY_CLIENT_SECRET')
+        self.sp = self.autenticar()
 
-# Obtener la fecha de hace un mes
-today = datetime.date.today()
-first_day_of_last_month = today.replace(day=1) - datetime.timedelta(days=1)
-start_date = first_day_of_last_month.replace(day=1).isoformat()
+    def autenticar(self):
+        # Autenticación con Spotify API
+        client_credentials_manager = SpotifyClientCredentials(client_id=self.client_id, client_secret=self.client_secret)
+        return spotipy.Spotify(client_credentials_manager=client_credentials_manager)
 
-# Obtener las playlists de rock más populares
-playlists = sp.search(q='genre:rock', type='playlist', limit=10)
+    def obtener_playlists_rock(self, limite=10):
+        # Obtener las playlists de rock más populares
+        playlists = self.sp.search(q='genre:rock', type='playlist', limit=limite)
+        return playlists['playlists']['items']
 
-# Obtener las canciones de las playlists
-tracks = []
-for playlist in playlists['playlists']['items']:
-    playlist_tracks = sp.playlist_tracks(playlist['id'])
-    for item in playlist_tracks['items']:
-        track = item['track']
-        tracks.append({
-            'name': track['name'],
-            'artist': track['artists'][0]['name'],
-            'popularity': track['popularity']
-        })
+    def obtener_canciones_de_playlist(self, playlist_id):
+        # Obtener las canciones de una playlist específica
+        playlist_tracks = self.sp.playlist_tracks(playlist_id)
+        canciones = []
+        for item in playlist_tracks['items']:
+            track = item['track']
+            cancion = Cancion(
+                nombre=track['name'],
+                artista=track['artists'][0]['name'],
+                popularidad=track['popularity']
+            )
+            canciones.append(cancion)
+        return canciones
 
-# Ordenar las canciones por popularidad
-top_tracks = sorted(tracks, key=lambda x: x['popularity'], reverse=True)
+    def obtener_top_canciones_rock(self, limite_playlists=10):
+        # Obtener las canciones de rock más populares de varias playlists
+        playlists = self.obtener_playlists_rock(limite=limite_playlists)
+        todas_las_canciones = []
+        for playlist in playlists:
+            canciones = self.obtener_canciones_de_playlist(playlist['id'])
+            todas_las_canciones.extend(canciones)
+        # Ordenar las canciones por popularidad
+        top_canciones = sorted(todas_las_canciones, key=lambda x: x.popularidad, reverse=True)
+        return top_canciones
 
-# Imprimir las canciones de rock más escuchadas del mes pasado
-for track in top_tracks:
-    print(f"{track['name']} - {track['artist']} (Popularity: {track['popularity']})")
+    def mostrar_top_canciones(self, limite_playlists=10):
+        # Imprimir las canciones de rock más escuchadas
+        top_canciones = self.obtener_top_canciones_rock(limite_playlists=limite_playlists)
+        for cancion in top_canciones:
+            print(cancion)
+
+# Ejecución principal
+if __name__ == "__main__":
+    spotify_rock_tracks = SpotifyRockTracks()
+    spotify_rock_tracks.mostrar_top_canciones()
