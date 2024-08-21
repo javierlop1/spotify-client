@@ -1,9 +1,11 @@
 import spotipy
 from spotipy.oauth2 import SpotifyClientCredentials
-import datetime
 import os
 import logging
 from dotenv import load_dotenv
+
+
+
 
 # Configuración del logging
 logging.basicConfig(
