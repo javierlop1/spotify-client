@@ -5,6 +5,7 @@ import logging
 from dotenv import load_dotenv
 
 from BloggerClient import BlogPost, get_credentials
+from chatgpt_api import get_chatgpt_response
 
 import datetime
 
@@ -19,36 +20,25 @@ logging.basicConfig(
 )
 
 class Cancion:
-    """
-    Class that represents a song.
-
-    Attributes:
-        name (str): The name of the song.
-        artist (str): The name of the artist.
-        popularity (int): The popularity level of the song (0-100).
-    """
-
-    def __init__(self, name, artist, popularity):
+    def __init__(self, name, artist, popularity, release_date, description):
         """
-        Initializes an instance of the Cancion class.
+        Initializes a Cancion object with the given attributes.
 
         Args:
-            name (str): The name of the song.
-            artist (str): The name of the artist.
-            popularity (int): The popularity level of the song.
+            nombre (str): The name of the track.
+            artista (str): The name of the artist.
+            popularity (int): The popularity score of the track.
+            release_date (str): The release date of the track.
+            description (str): A description or extra information about the track.
         """
         self.name = name
         self.artist = artist
         self.popularity = popularity
+        self.release_date = release_date
+        self.description = description
 
     def __str__(self):
-        """
-        Returns a string representation of the song.
-
-        Returns:
-            str: A string describing the song.
-        """
-        return f"{self.name} - {self.artist} (Popularity: {self.popularity})"
+        return f"{self.name} - {self.artist} (Popularity: {self.popularity}, Release Date: {self.release_date}, Description: {self.description})"
 
 
 class SpotifyRockTracks:
@@ -114,7 +104,7 @@ class SpotifyRockTracks:
             logging.error(f"Unexpected error retrieving playlists: {e}")
             return []
         
-    def get_rock_tracks_week_year(self, limit=10, week_of_the_year=12, year=2024):
+    def get_rock_tracks_week_year(self, limit=5, week_of_the_year=12, year=2024):
         """
         Retrieves rock tracks released in the 12th week of 2024.
 
@@ -130,13 +120,17 @@ class SpotifyRockTracks:
             results = self.sp.search(q=query, type='track', limit=limit)
             
             tracks = []
+            i = 1
             for item in results['tracks']['items']:
                 track = item
                 song = Cancion(
                     name=track['name'],
                     artist=track['artists'][0]['name'],
-                    popularity=track['popularity']
+                    popularity=track['popularity'],
+                    release_date=track['album']['release_date'],
+                    description=get_track_description(track, str(i))
                 )
+                i=i+1
                 tracks.append(song)
             
             logging.info(f"Retrieved {len(tracks)} rock tracks from the 12th week of 2024.")
@@ -181,7 +175,7 @@ class SpotifyRockTracks:
             logging.error(f"Unexpected error retrieving playlist tracks: {e}")
             return []
 
-    def get_top_rock_tracks(self, limit_playlists=10):
+    def get_top_rock_tracks(self, limit_playlists=5):
         """
         Retrieves the most popular rock tracks from multiple playlists.
 
@@ -204,7 +198,7 @@ class SpotifyRockTracks:
             logging.error(f"Error retrieving top tracks: {e}")
             return []
 
-    def display_top_tracks(self, limit_playlists=10, week_of_year=12):
+    def display_top_tracks(self, limit_playlists=5, week_of_year=12):
         """
         Returns the most popular rock tracks formatted as an HTML string.
 
@@ -220,11 +214,15 @@ class SpotifyRockTracks:
         
         try:
             top_songs = self.get_rock_tracks_week_year(limit_playlists, week_of_year)
+            top_songs.reverse()
             if top_songs:
-                html_output = "<ul>\n"
+                html_output = ""
+                i = 5
                 for song in top_songs:
-                    html_output += f"<li>{song.name} - {song.artist} (Popularity: {song.popularity})</li>\n"
-                html_output += "</ul>"
+                    html_output += f"<p><b>{i} - {song.name}</b> - <b>{song.artist}</b> <br>\n"
+                    html_output += f"{song.description}<br><br></p>"
+                    i=i-1
+                html_output += ""
                 logging.info(f"Generated HTML for {len(top_songs)} songs.")
                 return html_output
             else:
@@ -252,6 +250,9 @@ def get_today_week_of_year():
     
     return result
 
+def get_track_description(track, position):
+    return get_chatgpt_response(f"Can you write the introduction for this song: {track['name']} from {track['artists'][0]['name']}, as if you were the author of a rock music blog which present a list with the top rock songs,  the first thing that has to be mentioned is that this is the song number {position} in the list, You should omit the introduction from the response, I just want the text for the blog, and the response should be no more than 35 words.")
+
 # Main execution
 if __name__ == "__main__":
     spotify_rock_tracks = SpotifyRockTracks()
@@ -259,7 +260,8 @@ if __name__ == "__main__":
 
     blog_id = '7624840374831160388'  # Replace with your actual blog ID
     title = 'Top rock songs for week '+str(get_today_week_of_year())
-    content = '<p>'+spotify_rock_tracks.display_top_tracks(10,get_today_week_of_year())+'</p>'
+    content= '<p>'+get_chatgpt_response("Can you write the introduction for a list with the top rock songs for this week as if you were the author of a rock music blog, You should omit the introduction from the response, I just want the text for the blog, and the response should be no more than 35 words.")+'</p>'
+    content = content+spotify_rock_tracks.display_top_tracks(5,get_today_week_of_year())
 
     # Obtain credentials
     creds = get_credentials()
