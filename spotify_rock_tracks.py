@@ -1,5 +1,6 @@
 import spotipy
-from spotipy.oauth2 import SpotifyClientCredentials
+from spotipy.oauth2 import SpotifyOAuth
+
 import os
 import logging
 from dotenv import load_dotenv
@@ -41,6 +42,32 @@ class Cancion:
         return f"{self.name} - {self.artist} (Popularity: {self.popularity}, Release Date: {self.release_date}, Description: {self.description})"
 
 
+
+def authenticate_spotify():
+    """
+    Authenticates the user with Spotify using OAuth 2.0.
+    Requires 'playlist-modify-public' and 'playlist-modify-private' scopes.
+    
+    Returns:
+        spotipy.Spotify: Authenticated Spotify client.
+    """
+    try:
+        sp_oauth = SpotifyOAuth(
+            client_id=os.getenv('SPOTIPY_CLIENT_ID'),
+            client_secret=os.getenv('SPOTIPY_CLIENT_SECRET'),
+            redirect_uri=os.getenv('SPOTIPY_REDIRECT_URI'),
+            scope="playlist-modify-public playlist-modify-private"
+        )
+        
+        sp = spotipy.Spotify(auth_manager=sp_oauth)
+        print("Successfully authenticated with Spotify!")
+        return sp
+    except Exception as e:
+        print(f"Error during authentication: {e}")
+        return None
+
+
+
 class SpotifyRockTracks:
     """
     Class for managing Spotify authentication and retrieving songs.
@@ -61,27 +88,12 @@ class SpotifyRockTracks:
             self.client_secret = os.getenv('SPOTIPY_CLIENT_SECRET')
             if not self.client_id or not self.client_secret:
                 raise ValueError("Spotify credentials are not properly configured.")
-            self.sp = self.authenticate()
+            self.sp = authenticate_spotify()
+
             logging.info("Initialization successful.")
         except Exception as e:
             logging.error(f"Error during initialization: {e}")
             self.sp = None
-
-    def authenticate(self):
-        """
-        Authenticates with the Spotify API using the provided credentials.
-
-        Returns:
-            spotipy.Spotify: Authenticated Spotipy instance if successful, otherwise None.
-        """
-        try:
-            client_credentials_manager = SpotifyClientCredentials(client_id=self.client_id, client_secret=self.client_secret)
-            sp = spotipy.Spotify(client_credentials_manager=client_credentials_manager)
-            logging.info("Successfully authenticated with Spotify.")
-            return sp
-        except spotipy.exceptions.SpotifyException as e:
-            logging.error(f"Authentication error with Spotify: {e}")
-            return None
 
     def get_rock_playlists(self, limit=10):
         """
@@ -215,11 +227,12 @@ class SpotifyRockTracks:
         try:
             top_songs = self.get_rock_tracks_week_year(limit_playlists, week_of_year)
             top_songs.reverse()
+
             if top_songs:
                 html_output = ""
                 i = 5
                 for song in top_songs:
-                    html_output += f"<p><b>{i} - {song.name}</b> - <b>{song.artist}</b> <br>\n"
+                    html_output += f"<p><b>{i} - {song.name}</b> - <b>{song.artist}</b> - Release date: {song.release_date}<br>\n"
                     html_output += f"{song.description}<br><br></p>"
                     i=i-1
                 html_output += ""
@@ -231,6 +244,62 @@ class SpotifyRockTracks:
         except Exception as e:
             logging.error(f"Error displaying tracks: {e}")
             return f"<p>Error displaying tracks: {e}</p>"
+        
+    def create_playlist(self, playlist_name, songs, playlist_description=""):
+        """
+        Creates a new playlist on Spotify and adds songs to it.
+
+        Args:
+            playlist_name (str): The name of the new playlist.
+            songs (list): A list of Cancion objects representing the songs to add to the playlist.
+            playlist_description (str): Optional description for the playlist.
+
+        Returns:
+            str: The link to the created playlist.
+        """
+        try:
+            # Verify if the user is authenticated
+            if not self.sp:
+                logging.error("Error: the user is not authenticated to create a playlist.")
+                return None
+
+            # Get the         
+            user_profile = self.sp.me()
+            print(f"Authenticated user: {user_profile['display_name']}")
+
+            # Create a new playlist
+            playlist = self.sp.user_playlist_create(user=user_profile['id'], name=playlist_name, public=True, description=playlist_description)
+            playlist_id = playlist['id']
+
+            # Get the URIs of the songs (URI is required to add songs to a playlist)
+            track_uris = []
+            for song in songs:
+                # Search for the song on Spotify to get its URI
+                query = f"{song.name} {song.artist}"
+                result = self.sp.search(q=query, type='track', limit=1)
+
+                if result['tracks']['items']:
+                    track_uri = result['tracks']['items'][0]['uri']
+                    track_uris.append(track_uri)
+                else:
+                    logging.warning(f"Song not found: {song.name} by {song.artist} on Spotify.")
+
+            # Add the songs to the created playlist
+            if track_uris:
+                self.sp.playlist_add_items(playlist_id, track_uris)
+                logging.info(f"Playlist '{playlist_name}' created with {len(track_uris)} songs.")
+            else:
+                logging.warning(f"No songs were added to the playlist '{playlist_name}' because no valid URIs were found.")
+
+            # Return the link to the created playlist
+            playlist_url = playlist['external_urls']['spotify']
+            return playlist_url
+
+        except Exception as e:
+            logging.error(f"Error creating the playlist: {e}")
+            raise e
+            return None
+        
 
 def get_today_week_of_year():
     """
@@ -256,12 +325,22 @@ def get_track_description(track, position):
 # Main execution
 if __name__ == "__main__":
     spotify_rock_tracks = SpotifyRockTracks()
-    
 
+    week_of_the_year = str(get_today_week_of_year())
+
+    top_songs = spotify_rock_tracks.get_rock_tracks_week_year(5, week_of_the_year)
+    top_songs.reverse()
+
+    playlist_url = spotify_rock_tracks.create_playlist("Top rock athems for week "+week_of_the_year,top_songs,"Top rock athems for week "+week_of_the_year)
+
+
+    
     blog_id = '7624840374831160388'  # Replace with your actual blog ID
-    title = 'Top rock songs for week '+str(get_today_week_of_year())
+    title = 'Top rock songs for week '+week_of_the_year
     content= '<p>'+get_chatgpt_response("Can you write the introduction for a list with the top rock songs for this week as if you were the author of a rock music blog, You should omit the introduction from the response, I just want the text for the blog, and the response should be no more than 35 words.")+'</p>'
     content = content+spotify_rock_tracks.display_top_tracks(5,get_today_week_of_year())
+    content_food = '<p><span style="font-size: x-small;"> This list has been created with AI using Spotify data and some magic, you can find the <a href='+playlist_url+'>playlist here</a> </span></p>'
+    content = content + content_food
 
     # Obtain credentials
     creds = get_credentials()
