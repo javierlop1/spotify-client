@@ -140,5 +140,5 @@ def main(user_message):
 
 # Example usage
 if __name__ == "__main__":
-    main("Can you write the introduction for a list with the top rock songs for this week as if you were the author of a rock music blog, You should omit the introduction from the response, I just want the text for the blog, and the response should be no more than 35 words.")
+    print(main("Can you write the introduction for a list with the top rock songs for this week as if you were the author of a rock music blog, You should omit the introduction from the response, I just want the text for the blog, and the response should be no more than 35 words."))
     #main("Can you write the introduction for this song: Ama by Extremoduro, as if you were the author of a rock music blog which present a list with the top rock songs,  the first thing that has to be mentioned is that this is the song number 2 in the list, You should omit the introduction from the response, I just want the text for the blog, and the response should be no more than 35 words.")
