@@ -3,6 +3,11 @@ name: Run Python Script On-Demand
 # Allows the workflow to be triggered manually
 on:
   workflow_dispatch:
+    inputs:
+        example_input:
+          description: 'An example input parameter'
+          required: true
+          default: 'default_value'
 
 # Specifies the jobs that run as part of the workflow
 jobs:
