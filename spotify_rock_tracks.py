@@ -60,10 +60,11 @@ def authenticate_spotify():
         )
         
         sp = spotipy.Spotify(auth_manager=sp_oauth)
-        print("Successfully authenticated with Spotify!")
+        logging.info("Successfully authenticated with Spotify!")
         return sp
     except Exception as e:
-        print(f"Error during authentication: {e}")
+        logging.info(f"Error during authentication: {e}")
+        raise e
         return None
 
 
@@ -210,7 +211,7 @@ class SpotifyRockTracks:
             logging.error(f"Error retrieving top tracks: {e}")
             return []
 
-    def display_top_tracks(self, limit_playlists=5, week_of_year=12):
+    def display_top_tracks_html(self, limit_playlists=5, week_of_year=12):
         """
         Returns the most popular rock tracks formatted as an HTML string.
 
@@ -265,7 +266,7 @@ class SpotifyRockTracks:
 
             # Get the         
             user_profile = self.sp.me()
-            print(f"Authenticated user: {user_profile['display_name']}")
+            logging.info(f"Authenticated user: {user_profile['display_name']}")
 
             # Create a new playlist
             playlist = self.sp.user_playlist_create(user=user_profile['id'], name=playlist_name, public=True, description=playlist_description)
@@ -338,7 +339,7 @@ if __name__ == "__main__":
     blog_id = '7624840374831160388'  # Replace with your actual blog ID
     title = 'Top rock songs for week '+week_of_the_year
     content= '<p>'+get_chatgpt_response("Can you write the introduction for a list with the top rock songs for this week as if you were the author of a rock music blog, You should omit the introduction from the response, I just want the text for the blog, and the response should be no more than 35 words.")+'</p>'
-    content = content+spotify_rock_tracks.display_top_tracks(5,get_today_week_of_year())
+    content = content+spotify_rock_tracks.display_top_tracks_html(5,get_today_week_of_year())
     content_food = '<p><span style="font-size: x-small;"> This list has been created with AI using Spotify data and some magic, you can find the <a href='+playlist_url+'>playlist here</a> </span></p>'
     content = content + content_food
 
