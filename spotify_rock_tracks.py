@@ -113,10 +113,11 @@ class SpotifyRockTracks:
             return playlists['playlists']['items']
         except spotipy.exceptions.SpotifyException as e:
             logging.error(f"Error retrieving Spotify playlists: {e}")
-            return []
+            raise e
         except Exception as e:
             logging.error(f"Unexpected error retrieving playlists: {e}")
-            return []
+            raise e
+
         
     def get_rock_tracks_week_year(self, limit=5, week_of_the_year=12, year=2024):
         """

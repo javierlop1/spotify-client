@@ -35,6 +35,10 @@ jobs:
     - name: Create .env file
       run: |
         echo "OPENAI_API_KEY=${{ secrets.OPENAI_API_KEY }}" >> .env
+        echo "SPOTIPY_CLIENT_ID=${{ secrets.SPOTIPY_CLIENT_ID }}" >> .env
+        echo "SPOTIPY_CLIENT_SECRET=${{ secrets.SPOTIPY_CLIENT_SECRET }}" >> .env
+        echo "SPOTIPY_REDIRECT_URI=${{ secrets.SPOTIPY_REDIRECT_URI }}" >> .env
+        
 
     # Step 5: creating token file
     - name: Create token.json file
