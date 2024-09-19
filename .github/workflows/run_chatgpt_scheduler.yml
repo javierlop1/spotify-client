@@ -4,7 +4,7 @@ name: Weekly Python Script Execution
 on:
   schedule:
     # Runs the job once a week, every Monday at 00:00 (UTC)
-    - cron: '10 17 * * FRI'
+    - cron: '05 19 * * THU'
 
 # Specifies the jobs that run as part of the workflow
 jobs:
