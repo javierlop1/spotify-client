@@ -36,7 +36,11 @@ jobs:
       run: |
         echo "OPENAI_API_KEY=${{ secrets.OPENAI_API_KEY }}" >> .env
 
+    # Step 5: creating token file
+    - name: Create token.json file
+      run: |
+        echo "{"\""token"\"": "\""${{ secrets.GOOGLE_TOKEN }}"\"", "\""refresh_token"\"": "\""${{ secrets.GOOGLE_TOKEN_REFRESH }}"\"", "\""token_uri"\"": "\""https://oauth2.googleapis.com/token"\"", "\""client_id"\"": "\""${{ secrets.GOOGLE_CLIENT_ID }}"\"", "\""client_secret"\"": "\""${{ secrets.GOOGLE_CLIENT_SECRET }}"\"", "\""scopes"\"": ["\""https://www.googleapis.com/auth/blogger"\""], "\""universe_domain"\"": "\""googleapis.com"\"", "\""account"\"": "\"""\"", "\""expiry"\"": "\""2024-09-19T19:20:59.082376Z"\""}" >> token.json
 
-    # Step 5: Run your Python script
+    # Step 6: Run your Python script
     - name: Run Python script
-      run: python chatgpt_api.py
+      run: python spotify_rock_tracks.py
