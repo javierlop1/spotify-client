@@ -31,11 +31,12 @@ jobs:
         python -m pip install --upgrade pip
         if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
 
+    # Step 4: creating env file
     - name: Create .env file
-          run: |
-            echo "OPENAI_API_KEY=${{ secrets.OPENAI_API_KEY }}" >> .env
+      run: |
+        echo "OPENAI_API_KEY=${{ secrets.OPENAI_API_KEY }}" >> .env
 
 
-    # Step 4: Run your Python script
+    # Step 5: Run your Python script
     - name: Run Python script
       run: python chatgpt_api.py
