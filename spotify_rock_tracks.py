@@ -13,6 +13,7 @@ import datetime
 # Logging configuration
 logging.basicConfig(
     level=logging.INFO,  # Logging level (DEBUG, INFO, WARNING, ERROR, CRITICAL)
+    force=True,
     format='%(asctime)s - %(levelname)s - %(message)s',  # Message format
     handlers=[
         logging.FileHandler("spotify_rock_tracks.log"),  # Save logs to a file
