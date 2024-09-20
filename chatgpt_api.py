@@ -1,6 +1,7 @@
 import os
 import openai
 import logging
+from logging_config import setup_logging
 from dotenv import load_dotenv
 
 
@@ -8,11 +9,10 @@ from dotenv import load_dotenv
 load_dotenv()
 
 
-# Set up logging configuration
-logging.basicConfig(
-    level=logging.INFO,
-    format="%(asctime)s - %(levelname)s - %(message)s"
-)
+setup_logging()  # Ensure the logger is set up
+
+# Get a logger for this specific module
+logger = logging.getLogger(__name__)
 
 
 # Retrieve API key from environment variable (loaded from .env)

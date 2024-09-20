@@ -3,6 +3,7 @@ from spotipy.oauth2 import SpotifyOAuth
 
 import os
 import logging
+from logging_config import setup_logging
 from dotenv import load_dotenv
 
 from BloggerClient import BlogPost, get_credentials
@@ -10,16 +11,10 @@ from chatgpt_api import get_chatgpt_response
 
 import datetime
 
-# Logging configuration
-logging.basicConfig(
-    level=logging.INFO,  # Logging level (DEBUG, INFO, WARNING, ERROR, CRITICAL)
-    force=True,
-    format='%(asctime)s - %(levelname)s - %(message)s',  # Message format
-    handlers=[
-        logging.FileHandler("spotify_rock_tracks.log"),  # Save logs to a file
-        logging.StreamHandler()  # Display logs in the console
-    ]
-)
+setup_logging()  # Ensure the logger is set up
+
+# Get a logger for this specific module
+logger = logging.getLogger(__name__)
 
 class Cancion:
     def __init__(self, name, artist, popularity, release_date, description):

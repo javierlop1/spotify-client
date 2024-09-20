@@ -1,17 +1,16 @@
 import os
 import logging
+from logging_config import setup_logging
 from google.auth.transport.requests import Request
 from google.oauth2.credentials import Credentials
 from google_auth_oauthlib.flow import InstalledAppFlow
 from googleapiclient.discovery import build
 from googleapiclient.errors import HttpError
 
-# Configure logging
-logging.basicConfig(
-    filename='blogger_api.log',
-    level=logging.INFO,
-    format='%(asctime)s - %(levelname)s - %(message)s'
-)
+setup_logging()  # Ensure the logger is set up
+
+# Get a logger for this specific module
+logger = logging.getLogger(__name__)
 
 # SCOPES for Blogger API
 SCOPES = ['https://www.googleapis.com/auth/blogger']
