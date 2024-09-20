@@ -314,6 +314,8 @@ def get_today_week_of_year():
     
     # Create the final string
     result = week_number
+    logging.info(f"Week number: {result}")
+
     
     return result
 
