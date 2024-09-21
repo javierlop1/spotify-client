@@ -34,7 +34,6 @@ jobs:
     # Step 4: creating env file
     - name: Create .env file
       run: |
-        echo "------------------:"${{ secrets.SPOTIPY_REDIRECT_URI }}
         echo "OPENAI_API_KEY=${{ secrets.OPENAI_API_KEY }}" >> .env
         echo "SPOTIPY_CLIENT_ID=${{ secrets.SPOTIPY_CLIENT_ID }}" >> .env
         echo "SPOTIPY_CLIENT_SECRET=${{ secrets.SPOTIPY_CLIENT_SECRET }}" >> .env
@@ -50,7 +49,7 @@ jobs:
     # Step 6: creating cache file for spotify
     - name: Create .cache file
       run: |
-        echo {"access_token": "${{ secrets.SPOTIFY_ACCESS_TOKEN }}", "token_type": "Bearer", "expires_in": 3600, "refresh_token": "${{ secrets.SPOTIFY_REFRESH_TOKEN }}", "scope": "playlist-modify-public playlist-modify-private", "expires_at": 1726858965} >> .cache
+        echo "{\"access_token\": \"${{ secrets.SPOTIFY_ACCESS_TOKEN }}\", \"token_type\": \"Bearer\", \"expires_in\": 3600, \"refresh_token\": \"${{ secrets.SPOTIFY_REFRESH_TOKEN }}\", \"scope\": \"playlist-modify-public playlist-modify-private\", \"expires_at\": 1726858965}" >> .cache
 
     # Step 7: Run your Python script
     - name: Run Python script
