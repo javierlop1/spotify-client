@@ -3,6 +3,7 @@ import openai
 import logging
 from logging_config import setup_logging
 from dotenv import load_dotenv
+import random
 
 
 # Load environment variables from .env file
@@ -37,6 +38,8 @@ def get_chatgpt_response(user_message, model="gpt-4o-mini"):
     try:
         # Log the model and message being sent
         logging.info(f"Requesting response from model '{model}' with message: {user_message}")
+        random_number = random.random()  # Generates a random float between 0.0 and 1.0
+        logging.info(f"Temperature response '{random_number}'")
         
         # API call to OpenAI
         response = openai.ChatCompletion.create(
@@ -46,7 +49,7 @@ def get_chatgpt_response(user_message, model="gpt-4o-mini"):
                 {"role": "user", "content": user_message},
             ],
             max_tokens=60,  # Limit the number of tokens in the response
-            temperature=0.7,  # Adjust the creativity level (0.0 - 1.0)
+            temperature=random_number  # Adjust the creativity level (0.0 - 1.0)
         )
 
         # Return the generated response from the model

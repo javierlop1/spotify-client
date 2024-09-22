@@ -106,12 +106,9 @@ class BlogPost:
 
             post = service.posts().insert(blogId=self.blog_id, body=post_body).execute()
             logging.info(f"Post published successfully: {post['url']}")
-            print(f"Post published: {post['url']}")
 
         except HttpError as http_err:
             logging.error(f"HTTP error while publishing post: {http_err}")
-            print(f"HTTP error while publishing post: {http_err}")
         except Exception as e:
             logging.error(f"Error while publishing post: {e}")
-            print(f"Error while publishing post: {e}")
 

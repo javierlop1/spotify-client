@@ -127,6 +127,7 @@ class SpotifyRockTracks:
         try:
             # Search for rock songs released in the 12th week of 2024
             query = 'genre=rock,year=2024,week='+str(week_of_the_year)
+            logging.info(f"spotify query: {query}")
             results = self.sp.search(q=query, type='track', limit=limit)
             
             tracks = []
@@ -256,6 +257,8 @@ class SpotifyRockTracks:
             str: The link to the created playlist.
         """
         try:
+            logging.info(f"playlist to create: {playlist_name}")
+
             # Verify if the user is authenticated
             if not self.sp:
                 logging.error("Error: the user is not authenticated to create a playlist.")
