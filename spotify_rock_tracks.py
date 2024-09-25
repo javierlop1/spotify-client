@@ -7,7 +7,7 @@ from logging_config import setup_logging
 from dotenv import load_dotenv
 
 from BloggerClient import BlogPost, get_credentials
-from chatgpt_api import get_chatgpt_response
+from chatgpt_api import get_openai_response
 
 import datetime
 
@@ -209,6 +209,42 @@ class SpotifyRockTracks:
             logging.error(f"Error retrieving top tracks: {e}")
             return []
 
+
+    def display_top_tracks_text(self, limit_playlists=5, week_of_year=12):
+        """
+        Returns the most popular rock tracks formatted as a text string.
+
+        Args:
+            limit_playlists (int): Maximum number of playlists to process to retrieve tracks. Default is 10.
+
+        Returns:
+            str: An text string containing the list of songs.
+        """
+        if not self.sp:
+            logging.error("Cannot display tracks due to authentication issues.")
+            return "<p>Error: Cannot display tracks due to authentication issues.</p>"
+        
+        try:
+            top_songs = self.get_rock_tracks_week_year(limit_playlists, week_of_year)
+            top_songs.reverse()
+
+            if top_songs:
+                text_output = ""
+                i = 5
+                for song in top_songs:
+                    text_output += song.description
+                    i=i-1
+                text_output += ""
+                logging.info(f"Generated text for {len(top_songs)} songs: {text_output}")
+                return text_output
+            else:
+                logging.warning("No songs found to display.")
+                return "No songs found to display."
+        except Exception as e:
+            logging.error(f"Error displaying tracks: {e}")
+            return f"Error displaying tracks: {e}"
+
+
     def display_top_tracks_html(self, limit_playlists=5, week_of_year=12):
         """
         Returns the most popular rock tracks formatted as an HTML string.
@@ -298,8 +334,7 @@ class SpotifyRockTracks:
 
         except Exception as e:
             logging.error(f"Error creating the playlist: {e}")
-            raise e
-            return None
+            return None #in case of error, we don't want to return anything, to not block the program.
         
 
 def get_today_week_of_year():
@@ -323,7 +358,7 @@ def get_today_week_of_year():
     return result
 
 def get_track_description(track, position):
-    return get_chatgpt_response(f"Can you write the introduction for this song: {track['name']} from {track['artists'][0]['name']}, as if you were the author of a rock music blog which present a list with the top rock songs,  the first thing that has to be mentioned is that this is the song number {position} in the list, You should omit the introduction from the response, I just want the text for the blog, and the response should be no more than 35 words.")
+    return get_openai_response(f"Can you write the introduction for this song: {track['name']} from {track['artists'][0]['name']}, as if you were the author of a rock music blog which present a list with the top rock songs,  the first thing that has to be mentioned is that this is the song number {position} in the list, You should omit the introduction from the response, I just want the text for the blog, and the response should be no more than 35 words.")
 
 # Main execution
 if __name__ == "__main__":
@@ -334,14 +369,14 @@ if __name__ == "__main__":
     top_songs = spotify_rock_tracks.get_rock_tracks_week_year(5, week_of_the_year)
     top_songs.reverse()
 
-    playlist_url = spotify_rock_tracks.create_playlist("Top rock athems for week "+week_of_the_year,top_songs,"Top rock athems for week "+week_of_the_year)
-
-
     
     blog_id = '7624840374831160388'  # Replace with your actual blog ID
     title = 'Top rock songs for week '+week_of_the_year
-    content= '<p>'+get_chatgpt_response("Can you write the introduction for a list with the top rock songs for this week as if you were the author of a rock music blog, You should omit the introduction from the response, I just want the text for the blog, and the response should be no more than 35 words.")+'</p>'
+    introduction_text = get_openai_response("Can you write the introduction for a list with the top rock songs for this week as if you were the author of a rock music blog, You should omit the introduction from the response, I just want the text for the blog, and the response should be no more than 35 words.") 
+    content= '<p>'+introduction_text+'</p>'
     content = content+spotify_rock_tracks.display_top_tracks_html(5,get_today_week_of_year())
+    text_for_video = introduction_text+spotify_rock_tracks.display_top_tracks_text(5,get_today_week_of_year())
+    playlist_url = spotify_rock_tracks.create_playlist("Top rock athems for week "+week_of_the_year,top_songs,"Top rock athems for week "+week_of_the_year)
     content_food = '<p><span style="font-size: x-small;"> This list has been created with AI using Spotify data and some magic, you can find the <a href='+playlist_url+'>playlist here</a> </span></p>'
     content = content + content_food
 
