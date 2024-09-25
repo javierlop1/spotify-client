@@ -8,14 +8,12 @@ from googleapiclient.discovery import build
 from googleapiclient.errors import HttpError
 
 setup_logging()  # Ensure the logger is set up
-
-# Get a logger for this specific module
 logger = logging.getLogger(__name__)
 
 # SCOPES for Blogger API
 SCOPES = ['https://www.googleapis.com/auth/blogger']
 
-def get_credentials():
+def get_credentials() -> Credentials:
     """
     Obtain credentials for the Blogger API using OAuth 2.0.
 
@@ -23,9 +21,10 @@ def get_credentials():
     a browser window for the user to sign in and authorize the application.
 
     Returns:
-        creds (google.oauth2.credentials.Credentials): OAuth 2.0 credentials.
+        google.oauth2.credentials.Credentials: OAuth 2.0 credentials.
     
     Raises:
+        FileNotFoundError: If the client secret file is not found.
         Exception: If any error occurs during the authentication process.
     """
     creds = None
@@ -33,29 +32,37 @@ def get_credentials():
         # Check if credentials are stored in token.json
         if os.path.exists('token.json'):
             creds = Credentials.from_authorized_user_file('token.json', SCOPES)
-            logging.info('Credentials loaded from token.json')
+            if creds and creds.valid:
+                logger.info('Valid credentials loaded from token.json')
+            else:
+                logger.warning('Credentials are invalid or expired.')
 
         # If credentials are not valid, request login
         if not creds or not creds.valid:
             if creds and creds.expired and creds.refresh_token:
                 creds.refresh(Request())
-                logging.info('Access token refreshed.')
+                logger.info('Access token refreshed.')
             else:
+                if not os.path.exists('client_secret_blogger_desktop_client.json'):
+                    logger.error('Client secret file not found.')
+                    raise FileNotFoundError('client_secret_blogger_desktop_client.json not found.')
+                
                 flow = InstalledAppFlow.from_client_secrets_file(
                     'client_secret_blogger_desktop_client.json', SCOPES)
                 creds = flow.run_local_server(port=0)
-                logging.info('OAuth 2.0 authentication completed.')
+                logger.info('OAuth 2.0 authentication completed.')
 
             # Save the credentials for future use
             with open('token.json', 'w') as token:
                 token.write(creds.to_json())
-                logging.info('Credentials saved to token.json.')
+                logger.info('Credentials saved to token.json.')
 
     except Exception as e:
-        logging.error(f"Error obtaining credentials: {e}")
+        logger.error(f"Error obtaining credentials: {e}")
         raise
 
     return creds
+
 
 class BlogPost:
     """
@@ -65,10 +72,10 @@ class BlogPost:
         blog_id (str): The ID of the blog to publish posts to.
         title (str): The title of the blog post.
         content (str): The HTML content of the blog post.
-        creds (google.oauth2.credentials.Credentials): OAuth 2.0 credentials for API access.
+        service (googleapiclient.discovery.Resource): API client for Blogger API.
     """
 
-    def __init__(self, blog_id, title, content, creds):
+    def __init__(self, blog_id: str, title: str, content: str, creds: Credentials):
         """
         Initialize the BlogPost instance with the blog ID, title, content, and credentials.
 
@@ -81,34 +88,39 @@ class BlogPost:
         self.blog_id = blog_id
         self.title = title
         self.content = content
-        self.creds = creds
+        self.service = build('blogger', 'v3', credentials=creds)
 
-    def create_post(self):
+    def create_post(self) -> tuple:
         """
         Create and publish a new post in the Blogger blog.
 
         Uses the title and content defined in the instance to create the post.
 
         Returns:
-            None
+            tuple: A tuple containing the ID and URL of the created post.
         
         Raises:
             HttpError: If an error occurs related to the Blogger API.
             Exception: Any other errors that occur during execution.
         """
+        if not self.title.strip() or not self.content.strip():
+            logger.error("Post title or content is empty.")
+            raise ValueError("Title and content must not be empty.")
+
         try:
-            service = build('blogger', 'v3', credentials=self.creds)
             post_body = {
                 'kind': 'blogger#post',
                 'title': self.title,
                 'content': self.content,
             }
 
-            post = service.posts().insert(blogId=self.blog_id, body=post_body).execute()
-            logging.info(f"Post published successfully: {post['url']}")
+            post = self.service.posts().insert(blogId=self.blog_id, body=post_body).execute()
+            logger.info(f"Post published successfully: {post['url']}")
+            return post['id'], post['url']
 
         except HttpError as http_err:
-            logging.error(f"HTTP error while publishing post: {http_err}")
+            logger.error(f"HTTP error while publishing post: {http_err.resp.status} - {http_err.content}")
+            raise
         except Exception as e:
-            logging.error(f"Error while publishing post: {e}")
-
+            logger.error(f"Error while publishing post: {e}")
+            raise
