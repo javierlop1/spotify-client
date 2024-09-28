@@ -13,10 +13,10 @@ from logging_config import setup_logging
 setup_logging()  # Ensure the logger is set up
 logger = logging.getLogger(__name__)
 
-class Cancion:
+class Track:
     def __init__(self, name, artist, popularity, release_date, description):
         """
-        Initializes a Cancion object with the given attributes.
+        Initializes a Track object with the given attributes.
 
         Args:
             name (str): The name of the track.
@@ -113,13 +113,13 @@ class SpotifyRockTracks:
             list: A list of track objects (songs) from the specified week and year in the rock genre.
         """
         try:
-            query = f'genre=rock,year={year},week={week_of_the_year}'
+            query = f'genre=hard rock,year={year},week={week_of_the_year}'
             logger.info(f"Spotify query: {query}")
             results = self.sp.search(q=query, type='track', limit=limit)
 
             tracks = []
             for i, item in enumerate(results['tracks']['items'], start=1):
-                song = Cancion(
+                song = Track(
                     name=item['name'],
                     artist=item['artists'][0]['name'],
                     popularity=item['popularity'],
@@ -145,12 +145,12 @@ class SpotifyRockTracks:
             playlist_id (str): The ID of the playlist on Spotify.
 
         Returns:
-            list: A list of Cancion objects from the playlist.
+            list: A list of Track objects from the playlist.
         """
         try:
             playlist_tracks = self.sp.playlist_tracks(playlist_id)
             songs = [
-                Cancion(
+                Track(
                     name=item['track']['name'],
                     artist=item['track']['artists'][0]['name'],
                     popularity=item['track']['popularity']
@@ -255,7 +255,7 @@ class SpotifyRockTracks:
 
         Args:
             playlist_name (str): The name of the new playlist.
-            songs (list): A list of Cancion objects representing the songs to add to the playlist.
+            songs (list): A list of Track objects representing the songs to add to the playlist.
             playlist_description (str): Optional description for the playlist.
 
         Returns:
