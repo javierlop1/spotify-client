@@ -8,7 +8,9 @@ from dotenv import load_dotenv
 
 from blogger_api_client import BlogPost, get_credentials
 from chatgpt_api import get_openai_response
+from elevenlaps_api_client import text_to_speech
 from logging_config import setup_logging
+
 
 setup_logging()  # Ensure the logger is set up
 logger = logging.getLogger(__name__)
@@ -113,7 +115,7 @@ class SpotifyRockTracks:
             list: A list of track objects (songs) from the specified week and year in the rock genre.
         """
         try:
-            query = f'genre=hard rock,year={year},week={week_of_the_year}'
+            query = f'genre=punck rock,year={year},week={week_of_the_year}'
             logger.info(f"Spotify query: {query}")
             results = self.sp.search(q=query, type='track', limit=limit)
 
@@ -359,8 +361,8 @@ if __name__ == "__main__":
     content = f'<p>{introduction_text}</p>'
     content += spotify_rock_tracks.display_top_tracks_html(top_songs)
 
-    # Generate a text for video description
-    text_for_video = introduction_text + spotify_rock_tracks.display_top_tracks_text(top_songs)
+    # Generate a text for audio description
+    text_for_audio = introduction_text + spotify_rock_tracks.display_top_tracks_text(top_songs)
 
     # Create a Spotify playlist for the top rock songs of the current week
     playlist_name = f"Top Rock Anthems for Week {week_of_the_year}"
@@ -378,7 +380,21 @@ if __name__ == "__main__":
     blog_post = BlogPost(blog_id, title, content, creds)
     
     # Publish the blog post
-    blog_post.create_post()
+    #blog_post.create_post()
 
     # Print a confirmation message
     logging.info(f"Blog post titled '{title}' was successfully published.")
+
+    voice_id = "CwhRBWXzGAHq8TQ4Fs17"  # Replace with your actual voice ID
+    output_filename = title+".mp3"
+    
+    # Optionally, adjust stability and similarity_boost if needed
+    stability = 0.8
+    similarity_boost = 0.85
+
+    try:
+        # Call the text_to_speech function from tts_module
+        text_to_speech(text_for_audio, voice_id, output_filename, stability=stability, similarity_boost=similarity_boost)
+        print(f"Audio file generated: {output_filename}")
+    except Exception as e:
+        print(f"An error occurred: {e}")
